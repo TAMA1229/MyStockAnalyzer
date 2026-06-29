@@ -1,0 +1,23 @@
+{
+  "name": "korean-stock-analyzer",
+  "version": "1.0.0",
+  "description": "Premium Korean Stock Analyzer & Portfolio Insight",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "stock",
+    "korean-stock",
+    "analyzer",
+    "portfolio",
+    "naver-finance",
+    "google-news"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

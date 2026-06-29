@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K-Stock Insight | 프리미엄 주식 포트폴리오 & 시세 분석 대시보드</title>
+  <meta name="description" content="실시간 한국 주식 시세, 분할 매수 평단가 자동 연산, 레버리지 대출 차감 계산 및 뉴스 감성 분석 기반 투자 전략 제언 서비스">
+  
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Styling (Cache Busted v1.0.3) -->
+  <link rel="stylesheet" href="index.css?v=1.0.3">
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Background Blur Glows for Glassmorphism -->
+  <div class="glow-bg glow-bg-1"></div>
+  <div class="glow-bg glow-bg-2"></div>
+  <div class="glow-bg glow-bg-3"></div>
+
+  <div class="app-container">
+    
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+      <!-- App Logo -->
+      <div class="app-logo">
+        <div class="logo-icon">
+          <i data-lucide="trending-up" class="trending-icon"></i>
+        </div>
+        <h1 class="logo-text">K-Stock <span>Insight</span></h1>
+      </div>
+
+      <!-- User & Profile Selectors -->
+      <div class="sidebar-section profile-selector-section">
+        <!-- User Switcher -->
+        <div class="profile-select-container" style="margin-bottom: 8px;">
+          <i data-lucide="users" class="profile-icon"></i>
+          <select id="user-select" class="profile-dropdown">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+        <!-- Profile Switcher -->
+        <div class="profile-select-container" style="margin-bottom: 8px;">
+          <i data-lucide="folder-open" class="profile-icon"></i>
+          <select id="profile-select" class="profile-dropdown">
+            <option value="default">개인 포트폴리오 (Default)</option>
+            <option value="retirement">연금 자산 계좌 (Pension)</option>
+            <option value="family">가족 공동 자산 (Family)</option>
+          </select>
+        </div>
+        <!-- Telegram Notification Config Button -->
+        <button id="open-telegram-modal-btn" class="telegram-config-btn">
+          <i data-lucide="bell" class="config-icon"></i>
+          <span>🔔 실시간 알림 설정 (Telegram)</span>
+        </button>
+      </div>
+
+      <!-- Real-time Exchange Rate Card -->
+      <div class="sidebar-section exchange-rate-section">
+        <div class="exchange-rate-card">
+          <div class="exchange-rate-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span class="exchange-label"><i data-lucide="globe" style="width: 13px; height: 13px; display: inline-block; vertical-align: middle; margin-right: 2px;"></i> 실시간 환율 (USD/KRW)</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="exchange-indicator-dot animate-pulse"></span>
+              <button id="refresh-exchange-btn" title="환율 새로고침" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 2px; transition: color 0.2s;"><i data-lucide="refresh-cw" style="width: 11px; height: 11px;"></i></button>
+            </div>
+          </div>
+          <span class="exchange-rate-value" id="sidebar-exchange-rate">로딩 중...</span>
+        </div>
+      </div>
+
+      <!-- Portfolio Core Stats -->
+      <div class="sidebar-section portfolio-summary">
+        <h2 class="section-title"><i data-lucide="wallet"></i> 내 종합 포트폴리오</h2>
+        
+        <div class="summary-card">
+          <div class="summary-item">
+            <span class="summary-label">총 주식 평가액</span>
+            <span class="summary-value" id="total-stock-value">0원</span>
+          </div>
+          
+          <div class="summary-item highlight-item">
+            <span class="summary-label">총 부채 (대출금)</span>
+            <div class="debt-input-container">
+              <input type="text" id="debt-amount-input" placeholder="0" />
+              <span class="currency-label">원</span>
+              <button id="save-debt-btn" title="대출금 저장"><i data-lucide="check"></i></button>
+            </div>
+          </div>
+
+          <div class="summary-item highlight-item" style="margin-top: 8px;">
+            <span class="summary-label">예수금 (현금 잔고)</span>
+            <div class="debt-input-container">
+              <input type="text" id="cash-amount-input" placeholder="0" />
+              <span class="currency-label">원</span>
+              <button id="save-cash-btn" title="예수금 저장"><i data-lucide="check"></i></button>
+            </div>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-item">
+            <span class="summary-label">실질 순자산</span>
+            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+              <span class="summary-value net-value" id="net-asset-value">0원</span>
+              <span id="portfolio-daily-change" class="neutral-text" style="font-size: 0.75rem; font-weight: 600; margin-top: 3px;">(1일 손익: 0원)</span>
+            </div>
+          </div>
+          
+          <div class="summary-item inline-stats">
+            <div>
+              <span class="summary-label">종합 손익</span>
+              <span class="summary-value stat-change" id="total-valuation-profit">0원</span>
+            </div>
+            <div>
+              <span class="summary-label">종합 수익률 (ROE)</span>
+              <span class="summary-value stat-change" id="total-roi-ratio">0.00%</span>
+            </div>
+          </div>
+
+          <div class="summary-item inline-stats sub-stats" style="font-size: 0.75rem; margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.05); display: flex; justify-content: space-between; width: 100%;">
+            <div style="flex: 1; text-align: left;">
+              <span class="summary-label" style="font-size: 0.7rem; color: var(--text-secondary);">└ 평가:</span>
+              <span class="stat-change" id="total-unrealized-profit" style="font-size: 0.72rem; font-weight: 600;">0원</span>
+            </div>
+            <div style="flex: 1; text-align: right;">
+              <span class="summary-label" style="font-size: 0.7rem; color: var(--text-secondary);">└ 실현:</span>
+              <span class="stat-change" id="total-realized-profit" style="font-size: 0.72rem; font-weight: 600;">0원</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock Search & Autocomplete -->
+      <div class="sidebar-section stock-search">
+        <h2 class="section-title"><i data-lucide="search"></i> 종목 검색 및 추가</h2>
+        <div class="search-box-container">
+          <input type="text" id="stock-search-input" placeholder="종목명 또는 종목코드 입력..." autocomplete="off">
+          <i data-lucide="search" class="search-input-icon"></i>
+          
+          <!-- Autocomplete Dropdown -->
+          <div class="autocomplete-dropdown hidden" id="search-autocomplete-list"></div>
+        </div>
+      </div>
+
+      <!-- Portfolio Stock List -->
+      <div class="sidebar-section portfolio-list-section">
+        <h2 class="section-title"><i data-lucide="layers"></i> 관심/보유 종목 리스트</h2>
+        <div class="portfolio-list" id="portfolio-stock-list">
+          <!-- Dynamically populated via JS -->
+          <div class="empty-list-msg">
+            <i data-lucide="info" class="info-icon"></i>
+            <p>보유 또는 관심 있는 한국 주식을 검색하여 포트폴리오에 등록해 보세요.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Color Theme Toggle & Footer -->
+      <footer class="sidebar-footer">
+        <button id="theme-toggle-btn" class="theme-toggle">
+          <i data-lucide="arrow-left-right" class="theme-icon"></i>
+          <span id="theme-toggle-text">한국식 색상 (상승 빨강 / 하락 파랑)</span>
+        </button>
+        <p class="footer-version">K-Stock Insight v1.0.0</p>
+      </footer>
+    </aside>
+
+    <!-- ================= MAIN CONTENT AREA ================= -->
+    <main class="main-content">
+      
+      <!-- Market Briefing / Daily Report Panel -->
+      <div class="market-briefing-panel card" id="market-briefing-panel" style="margin-bottom: 20px; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+        <!-- Header with current index tickers -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="sparkles" style="color: #c084fc; width: 18px; height: 18px;"></i>
+            <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: white;">오늘의 글로벌 시장 요약 브리핑</h3>
+            <button id="refresh-briefing-btn" title="브리핑 새로고침" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 2px; transition: color 0.2s; outline: none; margin-left: 2px;"><i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i></button>
+          </div>
+          <!-- Current Indices -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.85rem; font-weight: 600;">
+            <div id="index-kospi-box" style="display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.02); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03); white-space: nowrap;">
+              <span style="color: var(--text-secondary);">KOSPI:</span>
+              <span id="market-kospi-price" style="color: white;">-</span>
+              <span id="market-kospi-change" class="neutral-text">-</span>
+            </div>
+            <div id="index-nasdaq-box" style="display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.02); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03); white-space: nowrap;">
+              <span style="color: var(--text-secondary);">NASDAQ:</span>
+              <span id="market-nasdaq-price" style="color: white;">-</span>
+              <span id="market-nasdaq-change" class="neutral-text">-</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Briefing Summary text -->
+        <div id="market-briefing-text" style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; min-height: 20px;">
+          데이터를 분석하여 일일 나스닥 시장 브리핑 리포트를 생성하는 중...
+        </div>
+      </div>
+
+      <!-- Welcome Panel if no stock selected -->
+      <div class="welcome-panel" id="welcome-panel">
+        <div class="welcome-box">
+          <i data-lucide="bar-chart-3" class="welcome-icon"></i>
+          <h2>K-Stock Insight에 오신 것을 환영합니다!</h2>
+          <p>한국 주식을 검색하여 포트폴리오에 추가하면, 실시간 가격 흐름과 핵심 지표, 최신 구글 뉴스, 그리고 감성 지수 기반의 매도/매수 추천 전략을 한번에 제공받을 수 있습니다.</p>
+          <div class="welcome-actions">
+            <button class="primary-btn search-focus-trigger"><i data-lucide="plus"></i> 첫 주식 등록하기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Stock Dashboard (Hidden initially until a stock is loaded) -->
+      <div class="stock-dashboard-grid hidden" id="active-stock-dashboard">
+        
+        <!-- Dashboard Header -->
+        <header class="dashboard-header card">
+          <div class="company-brand">
+            <img src="" alt="Company Logo" class="company-logo" id="active-company-logo" onerror="this.style.display='none'">
+            <div class="company-meta">
+              <div class="name-row">
+                <h2 id="active-stock-name">삼성전자</h2>
+                <span class="exchange-badge" id="active-stock-exchange">KOSPI</span>
+                <span class="code-badge" id="active-stock-code">005930</span>
+              </div>
+              <p class="market-status-text" id="active-market-status">장마감 | 실시간</p>
+            </div>
+          </div>
+
+          <div class="price-summary">
+            <div class="price-row">
+              <span class="current-price" id="active-current-price">0원</span>
+              <div class="change-badge" id="active-price-change-badge">
+                <span id="active-price-change-arrow">▲</span>
+                <span id="active-price-change-val">0</span>
+                <span id="active-price-change-ratio">(0.00%)</span>
+              </div>
+            </div>
+            <p class="update-time" id="active-update-time">마지막 업데이트: 2026-05-30 15:30:00</p>
+          </div>
+
+          <div class="action-buttons">
+            <button class="action-btn secondary-btn" id="open-split-buy-btn">
+              <i data-lucide="plus-circle"></i> 분할매수 관리
+            </button>
+            <button class="action-btn danger-btn" id="delete-stock-btn">
+              <i data-lucide="trash-2"></i> 종목 삭제
+            </button>
+          </div>
+        </header>
+
+        <!-- Dynamic Stock Chart Card -->
+        <section class="chart-section card">
+          <div class="card-header">
+            <h3><i data-lucide="area-chart"></i> 시세 흐름 차트</h3>
+            <div class="chart-tabs">
+              <button class="chart-tab active" data-chart="day">일봉 차트</button>
+              <button class="chart-tab" data-chart="candleDay">캔들 일봉</button>
+              <button class="chart-tab" data-chart="areaMonthThree">3개월 면적</button>
+              <button class="chart-tab" data-chart="areaYear">1년 변동</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <img src="" alt="실시간 주식 차트" id="stock-chart-img" class="stock-chart-image">
+            <div class="chart-loading-overlay hidden" id="chart-loader">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Trading Strategy & Recommendation Engine Card -->
+        <section class="strategy-section card">
+          <div class="card-header">
+            <h3><i data-lucide="brain-circuit"></i> K-Stock 투자 전략 제언</h3>
+            <div class="investment-score-container">
+              <span class="score-label">종합 투자 점수</span>
+              <span class="score-number" id="strategy-score">50점</span>
+            </div>
+          </div>
+          
+          <div class="strategy-card-body">
+            
+            <!-- Strategy Recommendation Badge -->
+            <div class="recommendation-badge-container">
+              <div class="strategy-badge" id="strategy-badge-el">관망 (Hold)</div>
+            </div>
+
+            <!-- Strategy Overview Text -->
+            <p class="strategy-rationale" id="strategy-overview-text">
+              지표들이 팽팽히 맞서거나 현재 주가가 밸류에이션상 정체 국면입니다. 신규 매수보다는 현재 비중을 유지하는 것이 안전합니다.
+            </p>
+
+            <!-- Metrics Gauge Visuals -->
+            <div class="gauge-grid">
+              <div class="gauge-item">
+                <span class="gauge-label">재무 가치 (Valuation)</span>
+                <div class="gauge-bar-outer">
+                  <div class="gauge-bar-inner val-bg" id="valuation-gauge" style="width: 50%;"></div>
+                </div>
+                <span class="gauge-score" id="valuation-score-txt">50/100</span>
+              </div>
+              <div class="gauge-item">
+                <span class="gauge-label">뉴스 여론 (Sentiment)</span>
+                <div class="gauge-bar-outer">
+                  <div class="gauge-bar-inner sent-bg" id="sentiment-gauge" style="width: 50%;"></div>
+                </div>
+                <span class="gauge-score" id="sentiment-score-txt">50/100</span>
+              </div>
+              <div class="gauge-item">
+                <span class="gauge-label">가격 강도 (Momentum)</span>
+                <div class="gauge-bar-outer">
+                  <div class="gauge-bar-inner mom-bg" id="momentum-gauge" style="width: 50%;"></div>
+                </div>
+                <span class="gauge-score" id="momentum-score-txt">50/100</span>
+              </div>
+            </div>
+
+            <div class="strategy-divider"></div>
+
+            <!-- Pros and Cons -->
+            <div class="pros-cons-grid">
+              <div class="pros-box">
+                <h4><i data-lucide="check-circle" class="check-icon"></i> 투자 매력 요인 (Pros)</h4>
+                <ul id="strategy-pros-list">
+                  <!-- JS populated -->
+                </ul>
+              </div>
+              <div class="cons-box">
+                <h4><i data-lucide="alert-triangle" class="alert-icon"></i> 투자 위험 요인 (Cons)</h4>
+                <ul id="strategy-cons-list">
+                  <!-- JS populated -->
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Key Financial Metrics & Details Card -->
+        <section class="metrics-section card">
+          <div class="card-header">
+            <h3><i data-lucide="list-collapse"></i> 핵심 기업 및 재무 지표</h3>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-label">시가총액</span>
+              <span class="metric-value" id="val-market-cap">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">PER (주가수익비율)</span>
+              <span class="metric-value" id="val-per">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">PBR (주가순자산비율)</span>
+              <span class="metric-value" id="val-pbr">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">EPS (주당순이익)</span>
+              <span class="metric-value" id="val-eps">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">BPS (주당순자산)</span>
+              <span class="metric-value" id="val-bps">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">배당수익률</span>
+              <span class="metric-value" id="val-div-ratio">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">52주 최고가</span>
+              <span class="metric-value" id="val-52w-high">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">52주 최저가</span>
+              <span class="metric-value" id="val-52w-low">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">외인 소진율</span>
+              <span class="metric-value" id="val-foreign-rate">-</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Target Price Alert Card -->
+        <section class="alert-settings-section card">
+          <div class="card-header">
+            <h3><i data-lucide="bell-ring" style="color: #c084fc;"></i> 실시간 지정가 알림 설정</h3>
+            <span class="news-badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; font-weight: 700;">Telegram Push</span>
+          </div>
+          <div class="alert-settings-body" style="padding-top: 10px; display: flex; flex-direction: column; gap: 14px;">
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0;">
+              주가가 설정한 지정 범위를 벗어날 시, 텔레그램 푸시 알림이 자동으로 발송됩니다. (중복 발송 방지 필터 기본 탑재)
+            </p>
+            
+            <div style="display: flex; gap: 16px;">
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                <label for="alert-ceiling-price" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="trending-up" style="width: 13px; height: 13px; color: var(--up-color);"></i> 지정 상한가 (이상)
+                </label>
+                <div class="debt-input-container" style="background: rgba(255, 255, 255, 0.02); padding: 6px 10px;">
+                  <input type="number" id="alert-ceiling-price" placeholder="설정 안 함" style="background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 0.95rem; font-weight: 600; font-family: 'Outfit', sans-serif;">
+                  <span class="alert-currency-label" id="alert-currency-ceiling-label" style="font-size: 0.78rem; color: var(--text-muted);">원</span>
+                </div>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                <label for="alert-floor-price" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="trending-down" style="width: 13px; height: 13px; color: var(--down-color);"></i> 지정 하한가 (이하)
+                </label>
+                <div class="debt-input-container" style="background: rgba(255, 255, 255, 0.02); padding: 6px 10px;">
+                  <input type="number" id="alert-floor-price" placeholder="설정 안 함" style="background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 0.95rem; font-weight: 600; font-family: 'Outfit', sans-serif;">
+                  <span class="alert-currency-label" id="alert-currency-floor-label" style="font-size: 0.78rem; color: var(--text-muted);">원</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="alert-relative-drop" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+                <i data-lucide="percent" style="width: 13px; height: 13px; color: #f43f5e;"></i> 시장 지수(KOSPI/NASDAQ) 대비 추가 하락률 (이상)
+              </label>
+              <div class="debt-input-container" style="background: rgba(255, 255, 255, 0.02); padding: 6px 10px; display: flex; align-items: center;">
+                <input type="number" step="0.1" min="0" id="alert-relative-drop" placeholder="설정 안 함 (예: 3)" style="background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 0.95rem; font-weight: 600; font-family: 'Outfit', sans-serif;">
+                <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600; margin-left: 6px;">%</span>
+              </div>
+            </div>
+            
+            <button id="save-alert-prices-btn" class="primary-btn" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); width: 100%; justify-content: center; padding: 12px; font-weight: 600; border: none; color: white; border-radius: 10px; cursor: pointer;">
+              <i data-lucide="bell" style="width: 16px; height: 16px;"></i> 실시간 알림 등록/저장
+            </button>
+          </div>
+        </section>
+
+        <!-- Real-time Related News Card -->
+        <section class="news-section card">
+          <div class="card-header">
+            <h3><i data-lucide="newspaper"></i> 실시간 관련 뉴스 피드</h3>
+            <span class="news-badge" id="news-count-badge">0개 뉴스</span>
+          </div>
+          <div class="news-list" id="active-news-list">
+            <!-- JS populated -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Family Aggregate Dashboard -->
+      <div class="family-dashboard-grid hidden" id="family-aggregate-dashboard">
+        <!-- Dashboard Header -->
+        <header class="dashboard-header card">
+          <div class="company-brand">
+            <div class="logo-icon family-logo-icon" style="background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple)); padding: 10px; border-radius: 12px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-right: 12px;">
+              <i data-lucide="users" style="color: white; width: 24px; height: 24px;"></i>
+            </div>
+            <div class="company-meta">
+              <div class="name-row">
+                <h2>👪 우리 가족 통합 자산 분석</h2>
+                <span class="exchange-badge" style="background: rgba(124, 58, 237, 0.2); color: #c084fc;">ADMIN</span>
+              </div>
+              <p class="market-status-text">가족 전체의 실시간 자산 구성 및 통합 포트폴리오 요약</p>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button class="action-btn secondary-btn" id="open-manage-family-btn">
+              <i data-lucide="user-plus"></i> 가족 구성원 관리
+            </button>
+          </div>
+        </header>
+
+        <!-- Consolidated Summary Cards Row -->
+        <section class="family-summary-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px;">
+          <!-- Card 1: Total Assets -->
+          <div class="summary-card card neon-card-purple" style="position: relative; overflow: hidden;">
+            <div class="card-meta">
+              <span class="summary-label" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">가족 총 평가액</span>
+              <span class="summary-value" id="family-total-valuation" style="font-size: 1.6rem; font-weight: 800; font-family: 'Outfit', sans-serif;">0원</span>
+            </div>
+            <i data-lucide="line-chart" class="card-neon-icon" style="position: absolute; right: 20px; bottom: 15px; font-size: 3rem; color: rgba(168, 85, 247, 0.15); width: 48px; height: 48px;"></i>
+          </div>
+          <!-- Card 2: Total Debt -->
+          <div class="summary-card card neon-card-red" style="position: relative; overflow: hidden;">
+            <div class="card-meta">
+              <span class="summary-label" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">가족 총 부채</span>
+              <span class="summary-value" id="family-total-debt" style="font-size: 1.6rem; font-weight: 800; font-family: 'Outfit', sans-serif;">0원</span>
+            </div>
+            <i data-lucide="trending-down" class="card-neon-icon" style="position: absolute; right: 20px; bottom: 15px; font-size: 3rem; color: rgba(239, 68, 68, 0.15); width: 48px; height: 48px;"></i>
+          </div>
+          <!-- Card 3: Net Assets -->
+          <div class="summary-card card neon-card-blue" style="position: relative; overflow: hidden;">
+            <div class="card-meta">
+              <span class="summary-label" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">가족 실질 순자산</span>
+              <span class="summary-value net-value" id="family-net-assets" style="font-size: 1.6rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #60a5fa;">0원</span>
+            </div>
+            <i data-lucide="shield-check" class="card-neon-icon" style="position: absolute; right: 20px; bottom: 15px; font-size: 3rem; color: rgba(59, 130, 246, 0.15); width: 48px; height: 48px;"></i>
+          </div>
+          <!-- Card 4: Combined ROE -->
+          <div class="summary-card card neon-card-green" style="position: relative; overflow: hidden;">
+            <div class="card-meta">
+              <span class="summary-label" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">가족 통합 수익률(ROE)</span>
+              <span class="summary-value" id="family-combined-roe" style="font-size: 1.6rem; font-weight: 800; font-family: 'Outfit', sans-serif;">0.00%</span>
+            </div>
+            <i data-lucide="zap" class="card-neon-icon" style="position: absolute; right: 20px; bottom: 15px; font-size: 3rem; color: rgba(34, 197, 94, 0.15); width: 48px; height: 48px;"></i>
+          </div>
+        </section>
+
+        <!-- Charts and Allocations Row -->
+        <div class="family-allocation-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px;">
+          <!-- Member Footprint Share Chart -->
+          <section class="member-share-card card">
+            <div class="card-header">
+              <h3><i data-lucide="pie-chart"></i> 구성원별 자산 기여도 (지분 비율)</h3>
+            </div>
+            <div class="member-share-list" id="member-share-chart-container" style="display: flex; flex-direction: column; gap: 16px; margin-top: 15px;">
+              <!-- Dynamically populated horizontal bars with matching member colors -->
+            </div>
+          </section>
+
+          <!-- Top 5 Family Holdings -->
+          <section class="family-holdings-card card">
+            <div class="card-header">
+              <h3><i data-lucide="award"></i> 가족 공동 보유 TOP 5 종목</h3>
+            </div>
+            <div class="family-holdings-list" id="family-top-holdings-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+              <!-- Dynamically populated top holdings list -->
+            </div>
+          </section>
+        </div>
+
+        <!-- Individual Members Breakdown Grid -->
+        <section class="members-grid-section">
+          <div class="card-header" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <h3><i data-lucide="layout-grid"></i> 가족 개별 포트폴리오 요약</h3>
+          </div>
+          <div class="members-cards-grid" id="family-members-cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
+            <!-- Dynamically populated Member cards -->
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ================= PORTFOLIO DETAIL / TRANSACTION HISTORY MODAL ================= -->
+  <div class="modal-backdrop hidden" id="split-buy-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="sliders"></i> 주식 거래 기록 및 평단가 계산기</h2>
+        <button class="modal-close-btn" id="close-modal-btn"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-intro">이 종목에 대한 매수 및 매도 거래 내역을 등록하면, 가중평균 평단가, 보유 수량, 그리고 매도에 따른 실현 손익이 실시간 계산되어 포트폴리오에 적용됩니다.</p>
+        
+        <div class="stock-summary-badge">
+          <span class="badge-stock-name" id="modal-stock-name">삼성전자</span>
+          <span class="badge-stock-code" id="modal-stock-code">005930</span>
+        </div>
+
+        <!-- Add Transaction Form -->
+        <form class="add-tx-form" id="add-transaction-form">
+          <div class="form-row">
+            <div class="form-group type-group" style="flex: 1; min-width: 90px;">
+              <label for="tx-type"><i data-lucide="arrow-left-right"></i> 거래구분</label>
+              <select id="tx-type" style="width: 100%; padding: 10px; background: rgba(17, 24, 39, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; color: white; cursor: pointer; font-weight: 600; outline: none;">
+                <option value="BUY" selected>매수 (+)</option>
+                <option value="SELL">매도 (-)</option>
+              </select>
+            </div>
+
+            <div class="form-group date-group">
+              <label for="tx-date"><i data-lucide="calendar"></i> 거래일자</label>
+              <input type="date" id="tx-date" required>
+            </div>
+            
+            <div class="form-group price-group">
+              <label for="tx-price"><i data-lucide="dollar-sign"></i> 거래단가 (원)</label>
+              <input type="number" step="any" id="tx-price" placeholder="예: 60000" min="0.01" required>
+            </div>
+            
+            <div class="form-group qty-group">
+              <label for="tx-qty"><i data-lucide="hash"></i> 거래수량 (주)</label>
+              <input type="number" id="tx-qty" placeholder="예: 10" min="1" required>
+            </div>
+          </div>
+          <button type="submit" class="primary-btn form-add-btn"><i data-lucide="plus"></i> 거래 내역 등록</button>
+        </form>
+
+        <div class="modal-divider"></div>
+
+        <!-- Transactions Table -->
+        <div class="transactions-list-container">
+          <h3><i data-lucide="list"></i> 등록된 거래 내역</h3>
+          <div class="tx-table-wrapper">
+            <table class="tx-table">
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>거래일자</th>
+                  <th>거래단가</th>
+                  <th>거래수량</th>
+                  <th>거래금액</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-table-body">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="calculated-summary" style="grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px;">
+            <div class="calc-box">
+              <span class="calc-label">최종 환산 평단가</span>
+              <span class="calc-value" id="calc-avg-price">0원</span>
+            </div>
+            <div class="calc-box">
+              <span class="calc-label">최종 합산 수량</span>
+              <span class="calc-value" id="calc-total-qty">0주</span>
+            </div>
+            <div class="calc-box">
+              <span class="calc-label">총 투자 원금</span>
+              <span class="calc-value" id="calc-total-principal">0원</span>
+            </div>
+            <div class="calc-box">
+              <span class="calc-label">누적 실현 손익</span>
+              <span class="calc-value" id="calc-realized-profit" style="font-weight: 700;">0원</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="action-btn secondary-btn" id="modal-cancel-btn">취소</button>
+        <button class="action-btn primary-btn" id="modal-save-btn">포트폴리오 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Family Members Modal (Hidden by default) -->
+  <div class="modal-backdrop hidden" id="family-manage-modal" style="z-index: 1100; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center;">
+    <div class="modal-card" style="max-width: 500px; width: 90%; background: rgba(17, 24, 39, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); backdrop-filter: blur(20px); overflow: hidden; display: flex; flex-direction: column;">
+      <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+        <h2 style="display: flex; align-items: center; gap: 8px; font-size: 1.25rem; font-weight: 700; color: white;"><i data-lucide="users" style="color: var(--accent-purple); width: 22px; height: 22px;"></i> 가족 구성원 관리</h2>
+        <button class="modal-close-btn" id="close-family-modal-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem; transition: color 0.2s;"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+        <!-- Add Member Form -->
+        <form id="add-member-form" style="margin-bottom: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 24px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 16px;">
+            <div style="flex: 2; display: flex; flex-direction: column; gap: 6px;">
+              <label for="new-member-name" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">구성원 한글 이름</label>
+              <input type="text" id="new-member-name" placeholder="예: 할머니, 아들" required style="width: 100%; padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; color: white; font-size: 0.9rem; transition: border-color 0.2s;">
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+              <label for="new-member-role" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">권한</label>
+              <select id="new-member-role" style="width: 100%; padding: 10px 14px; background: rgba(17, 24, 39, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; color: white; font-size: 0.9rem; cursor: pointer;">
+                <option value="member">일반 구성원</option>
+                <option value="admin">관리자</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="primary-btn" style="width: 100%; padding: 12px; font-weight: 600; justify-content: center; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo)); color: white; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s;"><i data-lucide="plus" style="width: 18px; height: 18px;"></i> 새 가족 등록</button>
+        </form>
+
+        <!-- Member List -->
+        <h3 style="font-size: 0.95rem; font-weight: 700; color: white; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;"><i data-lucide="list" style="color: var(--accent-indigo); width: 18px; height: 18px;"></i> 등록된 가족 목록</h3>
+        <div id="modal-family-members-list" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Telegram Notification Config Modal -->
+  <div class="modal-backdrop hidden" id="telegram-config-modal" style="z-index: 1200; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center;">
+    <div class="modal-card" style="max-width: 480px; width: 90%; background: rgba(18, 24, 43, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); backdrop-filter: blur(20px); display: flex; flex-direction: column;">
+      <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); background: transparent;">
+        <h2 style="display: flex; align-items: center; gap: 8px; font-size: 1.25rem; font-weight: 700; color: white; border: none; padding: 0; margin: 0;"><i data-lucide="bell" style="color: #c084fc; width: 22px; height: 22px; margin-right: 4px;"></i> 텔레그램 실시간 알림 설정</h2>
+        <button class="modal-close-btn" id="close-telegram-modal-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem;"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="modal-body" style="padding: 24px; display: flex; flex-direction: column; gap: 16px; background: transparent;">
+        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px;">
+          주식 가격이 설정한 목표가에 도달했을 때, 사용자님의 개인 스마트폰 텔레그램 메신저 앱으로 실시간 푸시 알림을 즉시 발송합니다.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label for="tele-bot-token" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;"><i data-lucide="key" style="width: 14px; height: 14px; color: #a855f7;"></i> 텔레그램 봇 토큰 (Bot Token)</label>
+          <input type="text" id="tele-bot-token" placeholder="예: 123456789:ABCdefGh..." style="width: 100%; padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; color: white; font-size: 0.85rem; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label for="tele-chat-id" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;"><i data-lucide="message-square" style="width: 14px; height: 14px; color: #3b82f6;"></i> 텔레그램 채팅 ID (Chat ID)</label>
+          <input type="text" id="tele-chat-id" placeholder="예: 987654321" style="width: 100%; padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; color: white; font-size: 0.85rem; outline: none;">
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 10px;">
+          <button id="telegram-test-btn" type="button" class="secondary-btn" style="flex: 1; justify-content: center; font-weight: 600; border-color: rgba(168, 85, 247, 0.3); color: #c084fc; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="send" style="width: 14px; height: 14px;"></i> 테스트 알림 전송
+          </button>
+          <button id="telegram-save-btn" type="button" class="primary-btn" style="flex: 1; justify-content: center; font-weight: 600; background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); border: none; color: white; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="check" style="width: 14px; height: 14px;"></i> 알림 정보 저장
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript File (Cache Busted v1.0.3) -->
+  <script src="app.js?v=1.0.3"></script>
+</body>
+</html>

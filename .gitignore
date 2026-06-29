@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+data/portfolio_*.json
+data/users.json
+data/alert_history.json

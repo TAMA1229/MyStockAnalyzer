@@ -1,0 +1,25 @@
+# ==========================================
+#  K-Stock Insight - Docker Compose Config
+# ==========================================
+version: '3.8'
+
+services:
+  k-stock-analyzer:
+    build: .
+    container_name: k-stock-analyzer
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      # Maps local NAS folder 'data' to the container's '/app/data'
+      - ./data:/app/data
+      
+      # [UPGRADE] Maps local NAS folder 'public' directly to the container's '/app/public'
+      # This enables instant visual CSS/HTML updates without needing to rebuild Docker images!
+      - ./public:/app/public
+      
+      # [UPGRADE] Mount server.js directly as a volume for instant backend updates without rebuilding!
+      - ./server.js:/app/server.js
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
