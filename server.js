@@ -78,9 +78,9 @@ try {
     users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
   } else {
     users = [
-      { id: 'tama', name: '아빠 (TAMA)', role: 'admin' },
-      { id: 'mom', name: '엄마', role: 'member' },
-      { id: 'daughter', name: '딸', role: 'member' }
+      { id: 'tama', name: '관리자 (TAMA)', role: 'admin' },
+      { id: 'mom', name: '구성원 1', role: 'member' },
+      { id: 'daughter', name: '구성원 2', role: 'member' }
     ];
     fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
     console.log("Seeded default users list successfully.");
